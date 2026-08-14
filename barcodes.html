@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+<head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MM97ZFHJQE"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-MM97ZFHJQE');
+</script>
+<meta charset="utf-8" />
+<title>ENLA 2025 - GENERADOR DE CÓDIGOS DE BARRAS</title>
+<style>
+  body{font-family: Arial, sans-serif; padding:20px}
+  form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 20px;
+    margin-bottom: 15px;
+    max-width: 600px;
+  }
+  form label {
+    font-weight: bold;
+    grid-column: span 1;
+    white-space: nowrap; /* evita salto de línea en etiquetas */
+  }
+  form input, form select {
+    padding: 5px;
+    font-size: 14px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 40px;  /* espacio horizontal y vertical */
+  }
+  .credencial {
+    border: 2px dashed #999;  /* borde punteado para cortar */
+    border-radius: 8px;
+    width: 100%;
+    max-width: 350px;
+    margin: auto;
+    padding: 5px;
+    page-break-inside: avoid;
+  }
+  .credencial th {
+    background: #2f74b5;
+    color: white;
+    padding: 6px;
+    text-align: center;
+    font-size: 16px;
+  }
+  .credencial td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    text-align: center;
+  }
+  .credencial svg {
+    width: 200px;
+    height: 40px;
+  }
+  @media print {
+    h2, form, button { display:none; }
+    body { margin:0; }
+    .grid { gap: 25px 40px; }
+  }
+</style>
+</head>
+<body>
+<h2>Generador de credenciales</h2>
+
+<form id="form">
+  <label for="claveAdm">Clave Administrador:</label>
+  <input id="claveAdm" type="text" maxlength="6">
+
+  <label for="tokenAdm">Token Administrador:</label>
+  <input id="tokenAdm" type="text" maxlength="6">
+
+  <label for="claveOp">Clave Operador:</label>
+  <input id="claveOp" type="text" maxlength="6">
+
+  <label for="tokenOp">Token Operador:</label>
+  <input id="tokenOp" type="text" maxlength="6">
+
+  <label for="filas">¿Cuántas filas generar? (máx. 5)</label>
+  <select id="filas">
+    <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+  </select>
+</form>
+
+<button id="generate">Generar credenciales</button>
+<button onclick="window.print()">Imprimir/Guardar PDF</button>
+
+<div id="output" class="grid"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script>
+const MAX_DIGITOS = 6;
+["claveOp","tokenOp","claveAdm","tokenAdm"].forEach(id=>{
+  const input = document.getElementById(id);
+  input.addEventListener("input", () => {
+    input.value = input.value.replace(/\D/g,""); // solo números
+    if(input.value.length > MAX_DIGITOS){
+      input.value = input.value.slice(0, MAX_DIGITOS);
+    }
+  });
+});
+
+document.getElementById('generate').onclick = () => {
+  const claveOp = document.getElementById("claveOp").value.trim();
+  const tokenOp = document.getElementById("tokenOp").value.trim();
+  const claveAdm = document.getElementById("claveAdm").value.trim();
+  const tokenAdm = document.getElementById("tokenAdm").value.trim();
+  const filas = Math.min(5, parseInt(document.getElementById("filas").value));
+
+  let html = "";
+  let renderList = [];
+
+  function generarTabla(titulo, clave, token) {
+    const idClave = 'c'+Math.random().toString(36).slice(2);
+    const idToken = 't'+Math.random().toString(36).slice(2);
+    renderList.push({id:idClave, val:clave});
+    renderList.push({id:idToken, val:token});
+    return `
+      <table class="credencial">
+        <thead><tr><th colspan="2">${titulo}</th></tr></thead>
+        <tbody>
+          <tr><td>CLAVE</td><td><svg id="${idClave}"></svg></td></tr>
+          <tr><td>TOKEN</td><td><svg id="${idToken}"></svg></td></tr>
+        </tbody>
+      </table>`;
+  }
+
+  for(let i=0; i<filas; i++){
+    if(i === 0){ // primera fila ADMINISTRADOR
+      html += generarTabla("ADMINISTRADOR", claveAdm, tokenAdm);
+      html += generarTabla("ADMINISTRADOR", claveAdm, tokenAdm);
+    } else { // resto OPERADOR
+      html += generarTabla("OPERADOR", claveOp, tokenOp);
+      html += generarTabla("OPERADOR", claveOp, tokenOp);
+    }
+  }
+
+  document.getElementById("output").innerHTML = html;
+
+  renderList.forEach(item=>{
+    JsBarcode("#"+item.id, item.val, {
+      format:"CODE39",
+      displayValue:false,
+      height:40,
+      margin:2
+    });
+  });
+};
+</script>
+</body>
+</html>
+
+
+
